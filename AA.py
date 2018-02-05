@@ -10,7 +10,6 @@ import simplejson
 from bs4 import BeautifulSoup as bs4
 from HTMLParser import HTMLParseError
 import traceback
-import simplejson as json
 
 from utility import AA
 from utility import Others
@@ -19,9 +18,6 @@ from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from django.views.decorators.cache import cache_page
 
 from django.http import HttpResponse, HttpResponseBadRequest
-
-
-CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 def main(prefix, docnum):
@@ -68,13 +64,16 @@ def main(prefix, docnum):
     return AA.detailed(Others.detailed(flight))
 
 
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
+
+
 @cache_page(CACHE_TTL)
 def index(request, prefix, docnum):
     try:
-        return HttpResponse(json.dumps(main(prefix, docnum)), content_type='text/json')
+        return HttpResponse(simplejson.dumps(main(prefix, docnum)), content_type='text/json')
     except:
         traceback.print_exc(file=sys.stdout)
-        return HttpResponseBadRequest(json.dumps([{'air_code':'Try again...'}]), content_type='text/json')
+        return HttpResponseBadRequest(simplejson.dumps([{'air_code':'Try again...'}]), content_type='text/json')
 
 
 if __name__ == '__main__':

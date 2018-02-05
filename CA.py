@@ -19,31 +19,24 @@ from django.views.decorators.cache import cache_page
 
 from django.http import HttpResponse, HttpResponseBadRequest
 
-CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
-
-def update(flight):
+def update(flight, context):
     '''
     this is a call from utility.Others.detailed()
-    :param flight:
+    :param flight: dict
     :return:
     '''
-    prefix = flight[0]['prefix']
-    docnum = flight[0]['docnum']
+    prefix = context['prefix']
+    docnum = context['docnum']
     CA.flight = main(prefix, docnum)
     new_flight = deepcopy(flight)
     # merge CA flight with other flights:
     for step in range(len(flight)):
-        for ca_step in range(len(CA.flight)):
-            if 'CA' in flight[step]['air_code'] \
-                    and flight[step]['_dep_port'] == CA.flight[ca_step]['_dep_port'] \
-                    and not ca_step:
-                new_flight[step].update(CA.flight[ca_step])
-            if ca_step > 0:
-                # made an assumption here:
-                # CA flight is unique -> that is there is only one flight
-                new_flight.insert(step+ca_step, CA.flight[ca_step])
-        break  # no need to continue
+        if flight[step] == context:
+            for ca_step in range(len(CA.flight)):
+                # add all flights that were tracked.
+                new_flight.insert(step+ca_step+1, CA.flight[ca_step])
+            break  # no need to continue
     return new_flight
 
 
@@ -113,6 +106,9 @@ def main(prefix, docnum):
         cached_content = flight
         cache.set(key, cached_content, 60 * 60)  # cache for one hour
     return cached_content
+
+
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 @cache_page(CACHE_TTL)

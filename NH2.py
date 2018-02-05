@@ -26,9 +26,6 @@ from django.views.decorators.cache import cache_page
 from copy import deepcopy
 
 
-CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
-
-
 class WebWait(object):
     @contextmanager
     def wait_for_page_load(self, driver, class_name, timeout=30):
@@ -37,28 +34,23 @@ class WebWait(object):
         WebDriverWait(driver, timeout).until(EC.staleness_of(old_page))
 
 
-def update(flight):
+def update(flight, context):
     '''
     this is a call from utility.Others.detailed()
     :param flight:
     :return:
     '''
-    prefix = flight[0]['prefix']
-    docnum = flight[0]['docnum']
+    prefix = context['prefix']
+    docnum = context['docnum']
     NH.flight = main(prefix, docnum)
     new_flight = deepcopy(flight)
     # merge NH flight with other flights:
     for step in range(len(flight)):
-        for nh_step in range(len(NH.flight)):
-            if 'CA' in flight[step]['air_code'] \
-                    and flight[step]['_dep_port'] == NH.flight[nh_step]['_dep_port'] \
-                    and not nh_step:
-                new_flight[step].update(NH.flight[nh_step])
-            if nh_step > 0:
-                # made an assumption here:
-                # flight is unique -> that is there is only one flight
-                new_flight.insert(step+nh_step, NH.flight[nh_step])
-        break  # no need to continue
+        if flight[step] == context:
+            for nh_step in range(len(NH.flight)):
+                # add all NH flight that were tracked.
+                new_flight.insert(step+nh_step+1, NH.flight[nh_step])
+            break  # no need to continue
     return new_flight
 
 
@@ -67,6 +59,7 @@ def sanitize(txt):
 
 
 def main(prefix, docnum):
+
     try:
         driver = webdriver.PhantomJS(desired_capabilities=Others.dcap,
                                      service_args=['--ignore-ssl-errors=true', '--ssl-protocol=TLSv1'])
@@ -102,12 +95,15 @@ def main(prefix, docnum):
             port = False
         if 'STD' in portlet[i]:
             d['_std'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(STD\)', sanitize(portlet[i])).group()[:-5])
+        if 'STA' in portlet[i]:
             d['_sta'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(STA\)', sanitize(portlet[i])).group()[:-5])
         if 'ATD' in portlet[i]:
             d['_atd'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ATD\)', sanitize(portlet[i])).group()[:-5])
+        if 'ATA' in portlet[i]:
             d['_ata'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ATA\)', sanitize(portlet[i])).group()[:-5])
         if 'ETD' in portlet[i]:
             d['_etd'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ETD\)', sanitize(portlet[i])).group()[:-5])
+        if 'ETA' in portlet[i]:
             d['_eta'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ETA\)', sanitize(portlet[i])).group()[:-5])
         if re.search(r'[A-Z\d]{6}', portlet[i]) and aircode == 0:
             d['air_code'] = portlet[i]
@@ -123,6 +119,9 @@ def main(prefix, docnum):
             flight.append(d)
 
     return flight
+
+
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
 
 @cache_page(CACHE_TTL)

@@ -24,13 +24,13 @@ class Others(object):
     def detailed(cls, flight):
         new_flight = deepcopy(flight)
         # travel thru every airline once
-        for flight_context in flight:
-            if 'CA' in flight_context['air_code']:
-                from CA import update
-                new_flight = update(flight)
-            if 'NH' in flight_context['air_code']:
-                from NH2 import update
-                new_flight = update(flight)
+        for context in flight:
+            if 'CA' in context['air_code']:
+                from CA import update as CA_update
+                new_flight = CA_update(flight, context)
+            if 'NH' in context['air_code']:
+                from NH2 import update as NH2_update
+                new_flight = NH2_update(new_flight, context)
         return new_flight
 
 
@@ -355,10 +355,11 @@ class NH(object):
         'hawbNumber4': '',
         'hawbNumber5': '',
     }
-    resp = requests.get(host)
-    resp.headers['Cookie'] = resp.headers['Set-Cookie']
-    resp.headers.pop('Set-Cookie')
-    _headers = resp.headers
+    #resp = requests.get(host)
+    #resp.headers['Cookie'] = resp.headers['Set-Cookie']
+    #resp.headers.pop('Set-Cookie')
+    #_headers = resp.headers
+
     @classmethod
     def arrange_time(cls, t):
         '''
