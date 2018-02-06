@@ -86,6 +86,7 @@ def main(prefix, docnum):
     d = {}
     port, aircode = False, 0
     flight = []
+    date_patern = re.compile(r'[a-zA-Z\d\s\-\|\:]{19}\(STD\)')
     for i in range(len(portlet)):
         if re.search(r'^[A-Z]{3}$', portlet[i]) and not port:
             d['_dep_port'] = sanitize(portlet[i])
@@ -94,17 +95,17 @@ def main(prefix, docnum):
             d['_dest_port'] = sanitize(portlet[i])
             port = False
         if 'STD' in portlet[i]:
-            d['_std'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(STD\)', sanitize(portlet[i])).group()[:-5])
+            d['_std'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if 'STA' in portlet[i]:
-            d['_sta'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(STA\)', sanitize(portlet[i])).group()[:-5])
+            d['_sta'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if 'ATD' in portlet[i]:
-            d['_atd'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ATD\)', sanitize(portlet[i])).group()[:-5])
+            d['_atd'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if 'ATA' in portlet[i]:
-            d['_ata'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ATA\)', sanitize(portlet[i])).group()[:-5])
+            d['_ata'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if 'ETD' in portlet[i]:
-            d['_etd'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ETD\)', sanitize(portlet[i])).group()[:-5])
+            d['_etd'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if 'ETA' in portlet[i]:
-            d['_eta'] = NH.arrange_time(re.search(r'[a-zA-Z\d\s\-\|\:]{19}\(ETA\)', sanitize(portlet[i])).group()[:-5])
+            d['_eta'] = NH.arrange_time(date_pattern.search(sanitize(portlet[i])).group()[:-5])
         if re.search(r'[A-Z\d]{6}', portlet[i]) and aircode == 0:
             d['air_code'] = portlet[i]
             aircode += 1
